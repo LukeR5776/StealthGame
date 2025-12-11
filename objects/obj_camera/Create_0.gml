@@ -14,8 +14,7 @@ follow_speed = 0.05; // Lower = smoother/slower, higher = snappier (0.1 recommen
 // Target to follow
 target = obj_player;
 
-// Initialize camera position to player position
-if (instance_exists(target)) {
+if instance_exists(target) {
     x = target.x;
-    y = target.y;
+	y = target.y;
 }
