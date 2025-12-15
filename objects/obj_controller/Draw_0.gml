@@ -50,6 +50,35 @@ if (tile_x >= 0 && tile_x < cell_w && tile_y >= 0 && tile_y < cell_h) {
             draw_text(preview_x, preview_y, "?");
         }
     }
+    else if (current_selection == PLACE_DOOR) {
+        // Draw door preview centered in tile
+        draw_set_alpha(preview_alpha);
+
+        // Determine sprite and flip based on direction
+        var preview_sprite = spr_door_forward;
+        var preview_xscale = 1;
+
+        if (door_placement_direction == 0) {
+            // Up - forward facing door
+            preview_sprite = spr_door_forward;
+            preview_xscale = 1;
+        } else if (door_placement_direction == 180) {
+            // Down - backward facing door
+            preview_sprite = spr_door_backward;
+            preview_xscale = 1;
+        } else if (door_placement_direction == 90) {
+            // Right - vertical door, no flip
+            preview_sprite = spr_door_vertical;
+            preview_xscale = 1;
+        } else if (door_placement_direction == 270) {
+            // Left - vertical door, horizontal flip
+            preview_sprite = spr_door_vertical;
+            preview_xscale = -1;
+        }
+
+        // Always show closed door in preview (frame 0)
+        draw_sprite_ext(preview_sprite, 0, preview_x, preview_y, preview_xscale, 1, 0, c_white, preview_alpha);
+    }
 
     // Reset draw settings
     draw_set_alpha(1);

@@ -37,6 +37,7 @@
   "resources":[
     {"id":{"name":"obj_camera","path":"objects/obj_camera/obj_camera.yy",},},
     {"id":{"name":"obj_controller","path":"objects/obj_controller/obj_controller.yy",},},
+    {"id":{"name":"obj_door","path":"objects/obj_door/obj_door.yy",},},
     {"id":{"name":"obj_goal","path":"objects/obj_goal/obj_goal.yy",},},
     {"id":{"name":"obj_guard","path":"objects/obj_guard/obj_guard.yy",},},
     {"id":{"name":"obj_player_spawn","path":"objects/obj_player_spawn/obj_player_spawn.yy",},},
@@ -48,6 +49,9 @@
     {"id":{"name":"Room1","path":"rooms/Room1/Room1.yy",},},
     {"id":{"name":"scr_draw_camera_fov","path":"scripts/scr_draw_camera_fov/scr_draw_camera_fov.yy",},},
     {"id":{"name":"scr_update_tile","path":"scripts/scr_update_tile/scr_update_tile.yy",},},
+    {"id":{"name":"spr_door_backward","path":"sprites/spr_door_backward/spr_door_backward.yy",},},
+    {"id":{"name":"spr_door_forward","path":"sprites/spr_door_forward/spr_door_forward.yy",},},
+    {"id":{"name":"spr_door_vertical","path":"sprites/spr_door_vertical/spr_door_vertical.yy",},},
     {"id":{"name":"spr_goal","path":"sprites/spr_goal/spr_goal.yy",},},
     {"id":{"name":"spr_guard","path":"sprites/spr_guard/spr_guard.yy",},},
     {"id":{"name":"spr_player_spawn","path":"sprites/spr_player_spawn/spr_player_spawn.yy",},},

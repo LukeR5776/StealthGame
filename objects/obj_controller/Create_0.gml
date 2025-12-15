@@ -10,6 +10,7 @@ PLACE_GOAL = 2;
 PLACE_SECURITY_CAM = 3;
 PLACE_GUARD = 4;
 PLACE_WAYPOINT = 5;
+PLACE_DOOR = 6;
 
 // Current selection
 current_selection = PLACE_WALL;
@@ -19,6 +20,9 @@ camera_placement_direction = 0;
 
 // Guard placement direction (for rotating guards before placing)
 guard_placement_direction = 0;
+
+// Door placement direction (for rotating doors before placing)
+door_placement_direction = 0;
 
 // Waypoint assignment system
 selected_guard_id = noone; // Which guard waypoints will be assigned to
@@ -38,7 +42,7 @@ cell_h = 12;
 // Create separate tile layers for floor and walls
 var floor_layer_id = layer_create(0, "Floor_Layer");
 floor_tilemap_id = layer_tilemap_create(floor_layer_id, 0, 0, ts_tiles, cell_w, cell_h);
-var wall_layer_id = layer_create(-100, "Wall_Layer");
+var wall_layer_id = layer_create(0, "Wall_Layer");
 wall_tilemap_id = layer_tilemap_create(wall_layer_id, 0, 0, ts_tiles, cell_w, cell_h);
 
 // Create map array for tile data
@@ -95,6 +99,15 @@ for (var i = 0; i < cell_w; i++) {
     waypoint_objects[i] = array_create(cell_h);
     for (var j = 0; j < cell_h; j++) {
         waypoint_objects[i][j] = noone;
+    }
+}
+
+// Create array to track door objects
+door_objects = array_create(cell_w);
+for (var i = 0; i < cell_w; i++) {
+    door_objects[i] = array_create(cell_h);
+    for (var j = 0; j < cell_h; j++) {
+        door_objects[i][j] = noone;
     }
 }
 

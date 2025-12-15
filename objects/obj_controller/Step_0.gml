@@ -1,11 +1,11 @@
 // Cycle through placeable objects with Q/E keys
 if (keyboard_check_pressed(ord("Q"))) {
     current_selection--;
-    if (current_selection < 0) current_selection = PLACE_WAYPOINT;
+    if (current_selection < 0) current_selection = PLACE_DOOR;
 }
 if (keyboard_check_pressed(ord("E"))) {
     current_selection++;
-    if (current_selection > PLACE_WAYPOINT) current_selection = PLACE_WALL;
+    if (current_selection > PLACE_DOOR) current_selection = PLACE_WALL;
 }
 
 // Rotate camera placement direction with R/T keys (only when security cam selected)
@@ -29,6 +29,18 @@ if (current_selection == PLACE_GUARD) {
     if (keyboard_check_pressed(ord("T"))) {
         guard_placement_direction -= 45;
         if (guard_placement_direction < 0) guard_placement_direction += 360;
+    }
+}
+
+// Rotate door placement direction with R/T keys (only when door selected)
+if (current_selection == PLACE_DOOR) {
+    if (keyboard_check_pressed(ord("R"))) {
+        door_placement_direction += 90;
+        if (door_placement_direction >= 360) door_placement_direction -= 360;
+    }
+    if (keyboard_check_pressed(ord("T"))) {
+        door_placement_direction -= 90;
+        if (door_placement_direction < 0) door_placement_direction += 360;
     }
 }
 
@@ -141,6 +153,24 @@ if (mouse_check_button(mb_left)) {
                 waypoint_objects[tile_x][tile_y] = new_waypoint;
             }
         }
+        else if (current_selection == PLACE_DOOR) {
+            // Only place if no door already at this tile
+            if (door_objects[tile_x][tile_y] == noone) {
+                var door_x = tile_x * tile_w + tile_w / 2;
+                var door_y = tile_y * tile_h + tile_h / 2;
+                var new_door = instance_create_layer(door_x, door_y, "Instances", obj_door);
+
+                // Set the door's initial direction
+                new_door.door_direction = door_placement_direction;
+
+                door_objects[tile_x][tile_y] = new_door;
+
+                // Update tile above (if it exists) to refresh wall rendering
+                if (tile_y > 0) {
+                    scr_update_tile(tile_x, tile_y - 1);
+                }
+            }
+        }
     }
 }
  
@@ -198,6 +228,17 @@ if (mouse_check_button(mb_right)) {
         if (waypoint_objects[tile_x][tile_y] != noone) {
             instance_destroy(waypoint_objects[tile_x][tile_y]);
             waypoint_objects[tile_x][tile_y] = noone;
+        }
+
+        // Remove door if clicked on it
+        if (door_objects[tile_x][tile_y] != noone) {
+            instance_destroy(door_objects[tile_x][tile_y]);
+            door_objects[tile_x][tile_y] = noone;
+
+            // Update tile above (if it exists) to refresh wall rendering
+            if (tile_y > 0) {
+                scr_update_tile(tile_x, tile_y - 1);
+            }
         }
     }
 }

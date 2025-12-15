@@ -17,6 +17,8 @@ if (current_selection == PLACE_WALL) {
     selection_text = "Guard";
 } else if (current_selection == PLACE_WAYPOINT) {
     selection_text = "Waypoint";
+} else if (current_selection == PLACE_DOOR) {
+    selection_text = "Door";
 }
 
 draw_text(20, 20, "Selected: " + selection_text);
@@ -29,6 +31,11 @@ if (current_selection == PLACE_SECURITY_CAM) {
 // Show guard direction if guard is selected
 if (current_selection == PLACE_GUARD) {
     draw_text(20, 40, "Guard Direction: " + string(guard_placement_direction) + "°");
+}
+
+// Show door direction if door is selected
+if (current_selection == PLACE_DOOR) {
+    draw_text(20, 40, "Door Direction: " + string(door_placement_direction) + "°");
 }
 
 // Show selected guard for waypoint assignment
@@ -45,8 +52,8 @@ draw_text(20, 100, "Left Click - Place");
 draw_text(20, 120, "Right Click - Remove");
 draw_text(20, 140, "Space - Respawn Player");
 
-// Show rotation controls when security cam or guard is selected
-if (current_selection == PLACE_SECURITY_CAM || current_selection == PLACE_GUARD) {
+// Show rotation controls when security cam, guard, or door is selected
+if (current_selection == PLACE_SECURITY_CAM || current_selection == PLACE_GUARD || current_selection == PLACE_DOOR) {
     draw_text(20, 160, "R/T - Rotate Direction");
 }
 
