@@ -1,11 +1,73 @@
+// Toggle between build and play mode with P key
+if (keyboard_check_pressed(ord("P"))) {
+    if (game_mode == "build") {
+        // Validate requirements before entering play mode
+        var missing = [];
+
+        if (!instance_exists(player_spawn_instance)) {
+            array_push(missing, "Player Spawn");
+        }
+
+        if (instance_number(obj_goal) == 0) {
+            array_push(missing, "Goal");
+        }
+
+        if (!instance_exists(extraction_instance)) {
+            array_push(missing, "Extraction");
+        }
+
+        // Only switch to play mode if all requirements are met
+        if (array_length(missing) == 0) {
+            // Entering play mode
+            game_mode = "play";
+            mode_switch_error = "";
+
+            // Count total goals
+            total_goals = instance_number(obj_goal);
+            goals_collected = 0;
+
+            // Spawn player at spawn point
+            if (!instance_exists(obj_player)) {
+                instance_create_layer(player_spawn_instance.x, player_spawn_instance.y, "Instances", obj_player);
+            }
+
+            // Refresh all guards' pathfinding grids to recognize newly placed walls
+            with (obj_guard) {
+                grid_initialized = false; // Force grid rebuild in next Step event
+            }
+        } else {
+            // Store error message
+            mode_switch_error = "Missing required objects: ";
+            for (var i = 0; i < array_length(missing); i++) {
+                mode_switch_error += missing[i];
+                if (i < array_length(missing) - 1) {
+                    mode_switch_error += ", ";
+                }
+            }
+        }
+    } else {
+        // Entering build mode
+        game_mode = "build";
+        mode_switch_error = "";
+
+        // Destroy player instance if it exists
+        if (instance_exists(obj_player)) {
+            instance_destroy(obj_player);
+        }
+    }
+}
+
+// Editor controls only active in build mode
+if (game_mode == "build") {
+
 // Cycle through placeable objects with Q/E keys
 if (keyboard_check_pressed(ord("Q"))) {
     current_selection--;
-    if (current_selection < 0) current_selection = PLACE_DOOR;
+    if (current_selection < 0) current_selection = PLACE_EXTRACTION;
 }
 if (keyboard_check_pressed(ord("E"))) {
     current_selection++;
-    if (current_selection > PLACE_DOOR) current_selection = PLACE_WALL;
+    if (current_selection > PLACE_EXTRACTION) current_selection = PLACE_WALL;
 }
 
 // Rotate camera placement direction with R/T keys (only when security cam selected)
@@ -171,6 +233,17 @@ if (mouse_check_button(mb_left)) {
                 }
             }
         }
+        else if (current_selection == PLACE_EXTRACTION) {
+            // Remove old extraction if it exists
+            if (instance_exists(extraction_instance)) {
+                instance_destroy(extraction_instance);
+            }
+
+            // Place new extraction point
+            var extraction_x = tile_x * tile_w + tile_w / 2;
+            var extraction_y = tile_y * tile_h + tile_h / 2;
+            extraction_instance = instance_create_layer(extraction_x, extraction_y, "Instances", obj_extraction);
+        }
     }
 }
  
@@ -240,6 +313,17 @@ if (mouse_check_button(mb_right)) {
                 scr_update_tile(tile_x, tile_y - 1);
             }
         }
+
+        // Remove extraction if clicked on it
+        if (instance_exists(extraction_instance)) {
+            var extraction_tile_x = extraction_instance.x div tile_w;
+            var extraction_tile_y = extraction_instance.y div tile_h;
+
+            if (tile_x == extraction_tile_x && tile_y == extraction_tile_y) {
+                instance_destroy(extraction_instance);
+                extraction_instance = noone;
+            }
+        }
     }
 }
 
@@ -256,3 +340,5 @@ if (keyboard_check_pressed(vk_space)) {
         }
     }
 }
+
+} // End of build mode check

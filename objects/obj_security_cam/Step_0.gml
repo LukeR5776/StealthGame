@@ -41,10 +41,10 @@ if (instance_exists(obj_player)) {
 
             // Check if point is within cone angle
             if (abs(angle_diff) <= cone_angle) {
-                // Check if line of sight to this point is blocked by walls
-                var collision = collision_line(cam_x, cam_y, check_x, check_y, obj_wall, false, true);
+                // Check if line of sight to this point is blocked by vision blockers
+                var collision = collision_line(cam_x, cam_y, check_x, check_y, obj_vision_blocker, false, true);
 
-                // If no wall blocks the view, player is detected
+                // If no vision blocker blocks the view, player is detected
                 if (collision == noone) {
                     player_detected = true;
 					if alarm[0] <= 0 {

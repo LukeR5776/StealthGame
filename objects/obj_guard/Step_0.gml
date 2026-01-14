@@ -1,5 +1,10 @@
-// Initialize A* grid on first step
+// Initialize A* grid on first step (or rebuild if requested)
 if (!grid_initialized && instance_exists(obj_controller)) {
+    // Free old grid if it exists (for rebuilding after walls are placed)
+    if (grid != -1) {
+        mp_grid_destroy(grid);
+    }
+
     // Create grid based on controller's tile system
     var grid_width = obj_controller.cell_w;
     var grid_height = obj_controller.cell_h;
@@ -153,10 +158,10 @@ if (instance_exists(obj_player)) {
 
             // Check if point is within cone angle
             if (abs(angle_diff) <= cone_angle) {
-                // Check if line of sight to this point is blocked by walls
-                var collision = collision_line(x, y, check_x, check_y, obj_wall, false, true);
+                // Check if line of sight to this point is blocked by vision blockers
+                var collision = collision_line(x, y, check_x, check_y, obj_vision_blocker, false, true);
 
-                // If no wall blocks the view, player is detected
+                // If no vision blocker blocks the view, player is detected
                 if (collision == noone) {
                     player_detected = true;
 					if alarm[0] <= 0 {

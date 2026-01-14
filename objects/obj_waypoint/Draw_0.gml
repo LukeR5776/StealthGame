@@ -1,3 +1,6 @@
+// Only draw waypoints in build mode
+if (instance_exists(obj_controller) && obj_controller.game_mode == "build") {
+
 // Draw line to next waypoint in patrol route
 if (guard_id != noone && instance_exists(guard_id)) {
     // Find the next waypoint in sequence
@@ -42,3 +45,5 @@ draw_text(x, y, string(waypoint_id));
 draw_set_alpha(1);
 draw_set_halign(fa_left);
 draw_set_valign(fa_top);
+
+} // End of build mode check

@@ -1,3 +1,11 @@
+// Game mode: "build" or "play"
+game_mode = "build";
+mode_switch_error = ""; // Error message if mode switch fails
+
+// Goal tracking
+goals_collected = 0;
+total_goals = 0;
+
 // Tile constants
 TILE_FLOOR = 1;
 TILE_WALL_SOLID = 2;
@@ -11,6 +19,7 @@ PLACE_SECURITY_CAM = 3;
 PLACE_GUARD = 4;
 PLACE_WAYPOINT = 5;
 PLACE_DOOR = 6;
+PLACE_EXTRACTION = 7;
 
 // Current selection
 current_selection = PLACE_WALL;
@@ -65,6 +74,9 @@ for (var i = 0; i < cell_w; i++) {
 
 // Track player spawn object (only one at a time)
 player_spawn_instance = noone;
+
+// Track extraction point (only one at a time)
+extraction_instance = noone;
 
 // Create array to track goal objects
 goal_objects = array_create(cell_w);

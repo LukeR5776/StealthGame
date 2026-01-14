@@ -6,6 +6,11 @@ if (instance_exists(obj_player)) {
     if (dist <= 32) {
         // Check for F key press
         if (keyboard_check_pressed(ord("F"))) {
+            // Increment goals collected counter
+            if (instance_exists(obj_controller)) {
+                obj_controller.goals_collected++;
+            }
+
             // Clear from controller's tracking array
             var tile_x = x div obj_controller.tile_w;
             var tile_y = y div obj_controller.tile_h;

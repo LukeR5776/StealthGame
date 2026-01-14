@@ -27,8 +27,8 @@ function scr_draw_camera_fov(cam_x, cam_y, cone_dir, cone_half_angle, cone_range
         angles[angle_count++] = a;
     }
 
-    // Single iteration through walls - cache bbox AND collect corners
-    with (obj_wall) {
+    // Single iteration through vision blockers - cache bbox AND collect corners
+    with (obj_vision_blocker) {
         var dist_to_wall = point_distance(cam_x, cam_y, x, y);
         if (dist_to_wall > max_wall_dist) continue;
 

@@ -1,4 +1,5 @@
-// Draw cursor preview for current selection
+// Draw cursor preview for current selection (only in build mode)
+if (game_mode == "build") {
 var tile_x = mouse_x div tile_w;
 var tile_y = mouse_y div tile_h;
 
@@ -79,6 +80,11 @@ if (tile_x >= 0 && tile_x < cell_w && tile_y >= 0 && tile_y < cell_h) {
         // Always show closed door in preview (frame 0)
         draw_sprite_ext(preview_sprite, 0, preview_x, preview_y, preview_xscale, 1, 0, c_white, preview_alpha);
     }
+    else if (current_selection == PLACE_EXTRACTION) {
+        // Draw extraction preview centered in tile
+        draw_set_alpha(preview_alpha);
+        draw_sprite(spr_extraction, 0, preview_x, preview_y);
+    }
 
     // Reset draw settings
     draw_set_alpha(1);
@@ -86,3 +92,4 @@ if (tile_x >= 0 && tile_x < cell_w && tile_y >= 0 && tile_y < cell_h) {
     draw_set_halign(fa_left);
     draw_set_valign(fa_top);
 }
+} // End of build mode check
