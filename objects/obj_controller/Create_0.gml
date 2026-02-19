@@ -1,17 +1,15 @@
-// Game mode: "build" or "play"
-game_mode = "build";
-mode_switch_error = ""; // Error message if mode switch fails
 
-// Goal tracking
+game_mode = "build";
+mode_switch_error = "";
+level_snapshot = undefined;
+
 goals_collected = 0;
 total_goals = 0;
 
-// Tile constants
 TILE_FLOOR = 1;
 TILE_WALL_SOLID = 2;
 TILE_WALL_FRONT = 3;
 
-// Placeable object types for level builder
 PLACE_WALL = 0;
 PLACE_PLAYER_SPAWN = 1;
 PLACE_GOAL = 2;
@@ -21,40 +19,68 @@ PLACE_WAYPOINT = 5;
 PLACE_DOOR = 6;
 PLACE_EXTRACTION = 7;
 
-// Current selection
 current_selection = PLACE_WALL;
 
-// Camera placement direction (for rotating cameras before placing)
+// build mode carousel
+carousel_items = [
+    { sprite: spr_wall,         name: "Wall",         origin_centered: false },
+    { sprite: spr_player_spawn, name: "Player Spawn", origin_centered: false },
+    { sprite: spr_goal,         name: "Goal",         origin_centered: false },
+    { sprite: spr_security_cam, name: "Security Cam", origin_centered: false },
+    { sprite: spr_guard,        name: "Guard",        origin_centered: true  },
+    { sprite: -1,               name: "Waypoint",     origin_centered: true  },
+    { sprite: spr_door_forward, name: "Door",         origin_centered: false },
+    { sprite: spr_extraction,   name: "Extraction",   origin_centered: false }
+];
+carousel_item_count = 8;
+
+carousel_visual_offset = 0;
+carousel_target_offset = 0;
+carousel_anim_speed = 0.15;
+
+carousel_y = 50;
+carousel_item_spacing = 80;
+carousel_selected_scale = 2.0;
+carousel_unselected_scale = 1.25;
+carousel_visible_distance = 3;
+
+props_panel_x = 10;
+props_panel_y = 130;
+props_panel_width = 140;
+props_panel_padding = 8;
+props_checkbox_size = 16;
+props_row_height = 24;
+mouse_over_props_panel = false;
+door_placement_locked = false;
+
+props_checkbox_x1 = 0;
+props_checkbox_y1 = 0;
+props_checkbox_x2 = 0;
+props_checkbox_y2 = 0;
+
 camera_placement_direction = 0;
-
-// Guard placement direction (for rotating guards before placing)
 guard_placement_direction = 0;
-
-// Door placement direction (for rotating doors before placing)
 door_placement_direction = 0;
 
-// Waypoint assignment system
-selected_guard_id = noone; // Which guard waypoints will be assigned to
-selected_guard_number = 0; // Which number key (1-9) was pressed
-next_waypoint_id = 0; // Auto-increment for waypoint order
+selected_guard_id = noone; 
+selected_guard_number = 0; 
+next_waypoint_id = 0;
 
-// Tileset reference
 ts = tileset_get_info(ts_tiles);
 show_debug_message(ts.tile_count);
 
-// Grid settings
 tile_w = 32;
 tile_h = 32;
-cell_w = 20;
-cell_h = 12;
+cell_w = 40;
+cell_h = 23;
 
-// Create separate tile layers for floor and walls
+// tilemap setup
 var floor_layer_id = layer_create(0, "Floor_Layer");
 floor_tilemap_id = layer_tilemap_create(floor_layer_id, 0, 0, ts_tiles, cell_w, cell_h);
 var wall_layer_id = layer_create(0, "Wall_Layer");
 wall_tilemap_id = layer_tilemap_create(wall_layer_id, 0, 0, ts_tiles, cell_w, cell_h);
 
-// Create map array for tile data
+// tile grid
 map = array_create(cell_w);
 for (var i = 0; i < cell_w; i++) {
     map[i] = array_create(cell_h);
@@ -63,7 +89,7 @@ for (var i = 0; i < cell_w; i++) {
     }
 }
 
-// Create array to track wall collision objects
+// wall collision tracking
 wall_objects = array_create(cell_w);
 for (var i = 0; i < cell_w; i++) {
     wall_objects[i] = array_create(cell_h);
@@ -72,13 +98,10 @@ for (var i = 0; i < cell_w; i++) {
     }
 }
 
-// Track player spawn object (only one at a time)
-player_spawn_instance = noone;
 
-// Track extraction point (only one at a time)
+player_spawn_instance = noone;
 extraction_instance = noone;
 
-// Create array to track goal objects
 goal_objects = array_create(cell_w);
 for (var i = 0; i < cell_w; i++) {
     goal_objects[i] = array_create(cell_h);
@@ -87,7 +110,6 @@ for (var i = 0; i < cell_w; i++) {
     }
 }
 
-// Create array to track security camera objects
 security_cam_objects = array_create(cell_w);
 for (var i = 0; i < cell_w; i++) {
     security_cam_objects[i] = array_create(cell_h);
@@ -96,7 +118,6 @@ for (var i = 0; i < cell_w; i++) {
     }
 }
 
-// Create array to track guard objects
 guard_objects = array_create(cell_w);
 for (var i = 0; i < cell_w; i++) {
     guard_objects[i] = array_create(cell_h);
@@ -105,7 +126,7 @@ for (var i = 0; i < cell_w; i++) {
     }
 }
 
-// Create array to track waypoint objects
+
 waypoint_objects = array_create(cell_w);
 for (var i = 0; i < cell_w; i++) {
     waypoint_objects[i] = array_create(cell_h);
@@ -114,7 +135,6 @@ for (var i = 0; i < cell_w; i++) {
     }
 }
 
-// Create array to track door objects
 door_objects = array_create(cell_w);
 for (var i = 0; i < cell_w; i++) {
     door_objects[i] = array_create(cell_h);
@@ -123,7 +143,7 @@ for (var i = 0; i < cell_w; i++) {
     }
 }
 
-// Populate the tilemap with tiles from the map array
+// init tiles
 for (var i = 0; i < cell_w; i++) {
     for (var j = 0; j < cell_h; j++) {
 		scr_update_tile(i, j);

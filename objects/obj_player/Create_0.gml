@@ -1,3 +1,2 @@
-//movement speed
-     move_speed = 3;
-	 depth = -1000;
+move_speed = 3;
+depth = -1000;

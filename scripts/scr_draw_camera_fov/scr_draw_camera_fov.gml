@@ -1,5 +1,5 @@
 function scr_draw_camera_fov(cam_x, cam_y, cone_dir, cone_half_angle, cone_range, color, alpha) {
-    // Use static arrays to avoid allocation every frame
+    // static arrays for performance
     static wall_left = [];
     static wall_right = [];
     static wall_top = [];
@@ -14,11 +14,11 @@ function scr_draw_camera_fov(cam_x, cam_y, cone_dir, cone_half_angle, cone_range
     var corner_offset = 0.057;
     var max_wall_dist = cone_range + 64;
 
-    // === SINGLE PASS: Cache walls AND gather corner angles ===
+    // cache walls and gather corner angles
     var wall_count = 0;
     var angle_count = 0;
 
-    // Add boundary and subdivision angles first
+    // boundary angles
     angles[angle_count++] = min_angle;
     angles[angle_count++] = max_angle;
 
@@ -27,12 +27,11 @@ function scr_draw_camera_fov(cam_x, cam_y, cone_dir, cone_half_angle, cone_range
         angles[angle_count++] = a;
     }
 
-    // Single iteration through vision blockers - cache bbox AND collect corners
+    // single pass over vision blockers
     with (obj_vision_blocker) {
         var dist_to_wall = point_distance(cam_x, cam_y, x, y);
         if (dist_to_wall > max_wall_dist) continue;
 
-        // Cache this wall's bounds
         var wl = bbox_left;
         var wr = bbox_right;
         var wt = bbox_top;
@@ -44,10 +43,9 @@ function scr_draw_camera_fov(cam_x, cam_y, cone_dir, cone_half_angle, cone_range
         wall_bottom[wall_count] = wb;
         wall_count++;
 
-        // Check corners inline (unrolled for speed)
+        // check corners (unrolled)
         var cx, cy, cd, ca, ad;
 
-        // Top-left
         cx = wl; cy = wt;
         cd = point_distance(cam_x, cam_y, cx, cy);
         if (cd <= cone_range) {
@@ -60,7 +58,6 @@ function scr_draw_camera_fov(cam_x, cam_y, cone_dir, cone_half_angle, cone_range
             }
         }
 
-        // Top-right
         cx = wr; cy = wt;
         cd = point_distance(cam_x, cam_y, cx, cy);
         if (cd <= cone_range) {
@@ -73,7 +70,6 @@ function scr_draw_camera_fov(cam_x, cam_y, cone_dir, cone_half_angle, cone_range
             }
         }
 
-        // Bottom-left
         cx = wl; cy = wb;
         cd = point_distance(cam_x, cam_y, cx, cy);
         if (cd <= cone_range) {
@@ -86,7 +82,6 @@ function scr_draw_camera_fov(cam_x, cam_y, cone_dir, cone_half_angle, cone_range
             }
         }
 
-        // Bottom-right
         cx = wr; cy = wb;
         cd = point_distance(cam_x, cam_y, cx, cy);
         if (cd <= cone_range) {
@@ -100,13 +95,11 @@ function scr_draw_camera_fov(cam_x, cam_y, cone_dir, cone_half_angle, cone_range
         }
     }
 
-    // === FAST SORT: Insertion sort with precomputed keys ===
-    // Precompute sort keys (angle_difference is expensive)
+    // sort angles (insertion sort - good for small arrays)
     for (var i = 0; i < angle_count; i++) {
         sort_keys[i] = angle_difference(cone_dir, angles[i]);
     }
 
-    // Insertion sort - faster than bubble for small arrays, often faster than quicksort too
     for (var i = 1; i < angle_count; i++) {
         var key_sort = sort_keys[i];
         var key_angle = angles[i];
@@ -121,23 +114,21 @@ function scr_draw_camera_fov(cam_x, cam_y, cone_dir, cone_half_angle, cone_range
         angles[j + 1] = key_angle;
     }
 
-    // === RAYCAST using cached wall data ===
+    // raycast
     var vertex_count = 0;
 
     for (var i = 0; i < angle_count; i++) {
-        // Use precomputed sort key for bounds check
         if (abs(sort_keys[i]) > cone_half_angle) continue;
 
         var angle = angles[i];
         var ray_dx = lengthdir_x(cone_range, angle);
         var ray_dy = lengthdir_y(cone_range, angle);
 
-        // Track closest hit using parametric t (avoids sqrt in distance calc)
+        // parametric t for closest hit
         var closest_t = 1.0;
         var hit_x = cam_x + ray_dx;
         var hit_y = cam_y + ray_dy;
 
-        // Check against cached walls
         for (var w = 0; w < wall_count; w++) {
             var wl = wall_left[w];
             var wr = wall_right[w];
@@ -146,7 +137,6 @@ function scr_draw_camera_fov(cam_x, cam_y, cone_dir, cone_half_angle, cone_range
 
             var t, test_coord;
 
-            // Left edge
             if (ray_dx != 0) {
                 t = (wl - cam_x) / ray_dx;
                 if (t > 0 && t < closest_t) {
@@ -159,7 +149,6 @@ function scr_draw_camera_fov(cam_x, cam_y, cone_dir, cone_half_angle, cone_range
                 }
             }
 
-            // Right edge
             if (ray_dx != 0) {
                 t = (wr - cam_x) / ray_dx;
                 if (t > 0 && t < closest_t) {
@@ -172,7 +161,6 @@ function scr_draw_camera_fov(cam_x, cam_y, cone_dir, cone_half_angle, cone_range
                 }
             }
 
-            // Top edge
             if (ray_dy != 0) {
                 t = (wt - cam_y) / ray_dy;
                 if (t > 0 && t < closest_t) {
@@ -185,7 +173,6 @@ function scr_draw_camera_fov(cam_x, cam_y, cone_dir, cone_half_angle, cone_range
                 }
             }
 
-            // Bottom edge
             if (ray_dy != 0) {
                 t = (wb - cam_y) / ray_dy;
                 if (t > 0 && t < closest_t) {
@@ -204,7 +191,7 @@ function scr_draw_camera_fov(cam_x, cam_y, cone_dir, cone_half_angle, cone_range
         vertex_count++;
     }
 
-    // === DRAW ===
+    // draw fan
     if (vertex_count > 0) {
         draw_set_color(color);
         draw_set_alpha(alpha);

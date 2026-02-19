@@ -1,7 +1,7 @@
-// Toggle between build and play mode with P key
+
 if (keyboard_check_pressed(ord("P"))) {
     if (game_mode == "build") {
-        // Validate requirements before entering play mode
+
         var missing = [];
 
         if (!instance_exists(player_spawn_instance)) {
@@ -16,27 +16,27 @@ if (keyboard_check_pressed(ord("P"))) {
             array_push(missing, "Extraction");
         }
 
-        // Only switch to play mode if all requirements are met
+
         if (array_length(missing) == 0) {
-            // Entering play mode
+            // switch to play mode
             game_mode = "play";
+            level_snapshot = scr_create_level_snapshot();
             mode_switch_error = "";
 
-            // Count total goals
+            // count goals
             total_goals = instance_number(obj_goal);
             goals_collected = 0;
 
-            // Spawn player at spawn point
+            // spawn player
             if (!instance_exists(obj_player)) {
                 instance_create_layer(player_spawn_instance.x, player_spawn_instance.y, "Instances", obj_player);
             }
 
-            // Refresh all guards' pathfinding grids to recognize newly placed walls
+
             with (obj_guard) {
-                grid_initialized = false; // Force grid rebuild in next Step event
+                grid_initialized = false;
             }
         } else {
-            // Store error message
             mode_switch_error = "Missing required objects: ";
             for (var i = 0; i < array_length(missing); i++) {
                 mode_switch_error += missing[i];
@@ -46,31 +46,38 @@ if (keyboard_check_pressed(ord("P"))) {
             }
         }
     } else {
-        // Entering build mode
+        // back to build mode
         game_mode = "build";
         mode_switch_error = "";
 
-        // Destroy player instance if it exists
-        if (instance_exists(obj_player)) {
-            instance_destroy(obj_player);
-        }
+        // restore level state
+        scr_restore_level_snapshot(level_snapshot);
     }
 }
 
-// Editor controls only active in build mode
+// pause menu
+if (keyboard_check_pressed(ord("M")) && game_mode == "play") {
+    if (!instance_exists(obj_pause_menu)) {
+        instance_create_layer(0, 0, "Instances", obj_pause_menu);
+    }
+}
+
+// build mode controls
 if (game_mode == "build") {
 
-// Cycle through placeable objects with Q/E keys
+// Q/E to cycle items
 if (keyboard_check_pressed(ord("Q"))) {
     current_selection--;
     if (current_selection < 0) current_selection = PLACE_EXTRACTION;
+    carousel_target_offset = current_selection;
 }
 if (keyboard_check_pressed(ord("E"))) {
     current_selection++;
     if (current_selection > PLACE_EXTRACTION) current_selection = PLACE_WALL;
+    carousel_target_offset = current_selection;
 }
 
-// Rotate camera placement direction with R/T keys (only when security cam selected)
+// R/T to rotate camera
 if (current_selection == PLACE_SECURITY_CAM) {
     if (keyboard_check_pressed(ord("R"))) {
         camera_placement_direction += 45;
@@ -82,7 +89,7 @@ if (current_selection == PLACE_SECURITY_CAM) {
     }
 }
 
-// Rotate guard placement direction with R/T keys (only when guard selected)
+// R/T to rotate guard
 if (current_selection == PLACE_GUARD) {
     if (keyboard_check_pressed(ord("R"))) {
         guard_placement_direction += 45;
@@ -94,7 +101,7 @@ if (current_selection == PLACE_GUARD) {
     }
 }
 
-// Rotate door placement direction with R/T keys (only when door selected)
+// R/T to rotate door
 if (current_selection == PLACE_DOOR) {
     if (keyboard_check_pressed(ord("R"))) {
         door_placement_direction += 90;
@@ -106,12 +113,25 @@ if (current_selection == PLACE_DOOR) {
     }
 }
 
-// Number keys (1-9) to select guard for waypoint assignment
+// L to lock/unlock doors
+if (keyboard_check_pressed(ord("L"))) {
+    var tile_x = mouse_x div tile_w;
+    var tile_y = mouse_y div tile_h;
+
+    if (tile_x >= 0 && tile_x < cell_w && tile_y >= 0 && tile_y < cell_h) {
+        if (door_objects[tile_x][tile_y] != noone && instance_exists(door_objects[tile_x][tile_y])) {
+            var door_inst = door_objects[tile_x][tile_y];
+            door_inst.is_locked = !door_inst.is_locked;
+            door_inst.lockpick_progress = 0;
+        }
+    }
+}
+
+// 1-9 to select guard
 for (var i = 1; i <= 9; i++) {
     if (keyboard_check_pressed(ord(string(i)))) {
         selected_guard_number = i;
 
-        // Find the Nth guard instance
         var guard_list = [];
         with (obj_guard) {
             array_push(guard_list, id);
@@ -119,7 +139,7 @@ for (var i = 1; i <= 9; i++) {
 
         if (i <= array_length(guard_list)) {
             selected_guard_id = guard_list[i - 1];
-            next_waypoint_id = 0; // Reset waypoint counter for new guard
+            next_waypoint_id = 0;
         } else {
             selected_guard_id = noone;
         }
@@ -127,16 +147,32 @@ for (var i = 1; i <= 9; i++) {
     }
 }
 
-// Left-click to place selected object
-if (mouse_check_button(mb_left)) {
+// menu blocks placement
+var menu_is_active = false;
+if (instance_exists(obj_save_load_menu) && obj_save_load_menu.menu_active) {
+    menu_is_active = true;
+}
+if (instance_exists(obj_win_screen)) {
+    menu_is_active = true;
+}
+
+// door lock checkbox
+if (mouse_check_button_pressed(mb_left) && current_selection == PLACE_DOOR && !menu_is_active) {
+    var gui_mx = device_mouse_x_to_gui(0);
+    var gui_my = device_mouse_y_to_gui(0);
+    if (point_in_rectangle(gui_mx, gui_my, props_checkbox_x1, props_checkbox_y1, props_checkbox_x2, props_checkbox_y2)) {
+        door_placement_locked = !door_placement_locked;
+    }
+}
+
+// left-click to place
+if (mouse_check_button(mb_left) && !mouse_over_props_panel && !menu_is_active) {
     var tile_x = mouse_x div tile_w;
     var tile_y = mouse_y div tile_h;
 
     if (tile_x >= 0 && tile_x < cell_w && tile_y >= 0 && tile_y < cell_h) {
 
-        // Place based on current selection
         if (current_selection == PLACE_WALL) {
-            // Only place if not already a wall
             if (map[tile_x][tile_y] == TILE_FLOOR) {
                 map[tile_x][tile_y] = TILE_WALL_FRONT;
                 scr_update_tile(tile_x, tile_y);
@@ -153,18 +189,15 @@ if (mouse_check_button(mb_left)) {
             }
         }
         else if (current_selection == PLACE_PLAYER_SPAWN) {
-            // Remove old spawn if it exists
             if (instance_exists(player_spawn_instance)) {
                 instance_destroy(player_spawn_instance);
             }
 
-            // Place new spawn
             var spawn_x = tile_x * tile_w;
             var spawn_y = tile_y * tile_h;
             player_spawn_instance = instance_create_layer(spawn_x, spawn_y, "Instances", obj_player_spawn);
         }
         else if (current_selection == PLACE_GOAL) {
-            // Only place if no goal already at this tile
             if (goal_objects[tile_x][tile_y] == noone) {
                 var goal_x = tile_x * tile_w;
                 var goal_y = tile_y * tile_h;
@@ -172,13 +205,11 @@ if (mouse_check_button(mb_left)) {
             }
         }
         else if (current_selection == PLACE_SECURITY_CAM) {
-            // Only place if no camera already at this tile
             if (security_cam_objects[tile_x][tile_y] == noone) {
                 var cam_x = tile_x * tile_w;
                 var cam_y = tile_y * tile_h;
                 var new_cam = instance_create_layer(cam_x, cam_y, "Instances", obj_security_cam);
 
-                // Set the camera's initial direction
                 new_cam.cone_direction = camera_placement_direction;
                 new_cam.start_direction = camera_placement_direction;
 
@@ -186,26 +217,23 @@ if (mouse_check_button(mb_left)) {
             }
         }
         else if (current_selection == PLACE_GUARD) {
-            // Only place if no guard already at this tile
             if (guard_objects[tile_x][tile_y] == noone) {
                 var guard_x = tile_x * tile_w + tile_w / 2;
                 var guard_y = tile_y * tile_h + tile_h / 2;
                 var new_guard = instance_create_layer(guard_x, guard_y, "Instances", obj_guard);
 
-                // Set the guard's initial direction
                 new_guard.facing_direction = guard_placement_direction;
 
                 guard_objects[tile_x][tile_y] = new_guard;
             }
         }
         else if (current_selection == PLACE_WAYPOINT) {
-            // Only place if no waypoint already at this tile
             if (waypoint_objects[tile_x][tile_y] == noone) {
                 var waypoint_x = tile_x * tile_w + tile_w / 2;
                 var waypoint_y = tile_y * tile_h + tile_h / 2;
                 var new_waypoint = instance_create_layer(waypoint_x, waypoint_y, "Instances", obj_waypoint);
 
-                // Auto-assign to selected guard
+                // assign to guard
                 if (selected_guard_id != noone && instance_exists(selected_guard_id)) {
                     new_waypoint.guard_id = selected_guard_id;
                     new_waypoint.waypoint_id = next_waypoint_id;
@@ -222,8 +250,9 @@ if (mouse_check_button(mb_left)) {
                 var door_y = tile_y * tile_h + tile_h / 2;
                 var new_door = instance_create_layer(door_x, door_y, "Instances", obj_door);
 
-                // Set the door's initial direction
+                // Set the door's initial direction and lock state
                 new_door.door_direction = door_placement_direction;
+                new_door.is_locked = door_placement_locked;
 
                 door_objects[tile_x][tile_y] = new_door;
 
@@ -247,8 +276,8 @@ if (mouse_check_button(mb_left)) {
     }
 }
  
-// Right-click to remove any placed objects
-if (mouse_check_button(mb_right)) {
+// Right-click to remove any placed objects (blocked when over properties panel or menu active)
+if (mouse_check_button(mb_right) && !mouse_over_props_panel && !menu_is_active) {
     var tile_x = mouse_x div tile_w;
     var tile_y = mouse_y div tile_h;
 
@@ -327,17 +356,20 @@ if (mouse_check_button(mb_right)) {
     }
 }
 
-// Space key to respawn player at spawn point or create player if none exists
-if (keyboard_check_pressed(vk_space)) {
-    if (instance_exists(player_spawn_instance)) {
-        if (instance_exists(obj_player)) {
-            // Respawn existing player
-            obj_player.x = player_spawn_instance.x;
-            obj_player.y = player_spawn_instance.y;
-        } else {
-            // Create new player at spawn
-            instance_create_layer(player_spawn_instance.x, player_spawn_instance.y, "Instances", obj_player);
-        }
+
+// ESC key to open save/load menu (only in build mode)
+if (keyboard_check_pressed(vk_escape) && game_mode == "build") {
+    if (instance_exists(obj_save_load_menu)) {
+        obj_save_load_menu.menu_active = !obj_save_load_menu.menu_active;
+    }
+}
+
+// Smooth carousel animation
+if (carousel_visual_offset != carousel_target_offset) {
+    carousel_visual_offset = lerp(carousel_visual_offset, carousel_target_offset, carousel_anim_speed);
+    // Snap when very close to prevent endless tiny movements
+    if (abs(carousel_visual_offset - carousel_target_offset) < 0.01) {
+        carousel_visual_offset = carousel_target_offset;
     }
 }
 

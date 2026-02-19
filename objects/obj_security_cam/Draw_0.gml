@@ -1,7 +1,5 @@
-// Draw the sprite
 draw_self();
 
-// Draw the vision cone using visibility polygon algorithm
 var vision_color = player_detected ? c_red : c_lime;
 var vision_alpha = player_detected ? 0.3 : 0.2;
 

@@ -1,33 +1,33 @@
-function scr_update_tile(x, y) {
-
-    var tileType = map[x][y];
-
-    // Clear both layers first
-    tilemap_set(floor_tilemap_id, 0, x, y);
-    tilemap_set(wall_tilemap_id, 0, x, y);
-
-    // Set floor tile on floor layer
-    if (tileType == TILE_FLOOR) {
-        tilemap_set(floor_tilemap_id, TILE_FLOOR, x, y);
+function scr_update_tile(tile_x, tile_y) {
+    if (!instance_exists(obj_controller)) {
+        show_debug_message("ERROR: scr_update_tile called but obj_controller does not exist");
         return;
     }
 
-    // Set wall tile on wall layer + check if tile below is floor, wall, or has a door
-    var below_is_floor = (y + 1 >= cell_h) || (map[x][y + 1] == TILE_FLOOR);
+    var controller = obj_controller;
+    var tileType = controller.map[tile_x][tile_y];
 
-    // Also check if there's a door in the tile below (doors act as floor for wall rendering)
-    if (y + 1 < cell_h && instance_exists(obj_controller)) {
-        if (obj_controller.door_objects[x][y + 1] != noone && instance_exists(obj_controller.door_objects[x][y + 1])) {
+    tilemap_set(controller.floor_tilemap_id, 0, tile_x, tile_y);
+    tilemap_set(controller.wall_tilemap_id, 0, tile_x, tile_y);
+
+    if (tileType == controller.TILE_FLOOR) {
+        tilemap_set(controller.floor_tilemap_id, controller.TILE_FLOOR, tile_x, tile_y);
+        return;
+    }
+
+    // front-face vs solid wall depends on what's below
+    var below_is_floor = (tile_y + 1 >= controller.cell_h) || (controller.map[tile_x][tile_y + 1] == controller.TILE_FLOOR);
+
+    // doors count as floor for rendering purposes
+    if (tile_y + 1 < controller.cell_h) {
+        if (controller.door_objects[tile_x][tile_y + 1] != noone && instance_exists(controller.door_objects[tile_x][tile_y + 1])) {
             below_is_floor = true;
         }
     }
 
     if (below_is_floor) {
-        // Front-facing wall
-        tilemap_set(wall_tilemap_id, TILE_WALL_FRONT, x, y);
+        tilemap_set(controller.wall_tilemap_id, controller.TILE_WALL_FRONT, tile_x, tile_y);
     } else {
-        // Solid wall
-        tilemap_set(wall_tilemap_id, TILE_WALL_SOLID, x, y);
+        tilemap_set(controller.wall_tilemap_id, controller.TILE_WALL_SOLID, tile_x, tile_y);
     }
 }
-

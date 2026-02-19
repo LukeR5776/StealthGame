@@ -7,8 +7,8 @@
   "locked":false,
   "name":"RoomUI",
   "parent":{
-    "name":"BLANK GAME_6",
-    "path":"BLANK GAME_6.yyp",
+    "name":"heist_snapshot1",
+    "path":"heist_snapshot1.yyp",
   },
   "resourceType":"GMRoomUI",
   "resourceVersion":"2.0",
